@@ -6,6 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import proyectoreddit.dto.RegisterRequest;
+import proyectoreddit.exceptions.RedditApplicationException;
 import proyectoreddit.models.NotificationEmail;
 import proyectoreddit.models.User;
 import proyectoreddit.models.VerificationToken;
@@ -13,6 +14,7 @@ import proyectoreddit.repository.UserRepository;
 import proyectoreddit.repository.VerificationTokenRepository;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -49,15 +51,15 @@ public class AuthService {
 
 
         String token =  generateVerificationToken(user);
-        /*
+
         mailService.sendMail(new NotificationEmail("Por favor, activa tu cuenta",user.getEmail(),"Gracias por inscribirte" +
                 "presione el click para que te lleve al url de activacion de tu cuenta en Spring Reddit: : " +
-                "http://localhost:8080/api/auth/accountVeritifaction" +  token));
+                "http://localhost:8080/api/auth/accountVerification/" +  token));
 
 
-         */
 
-        mailService.sendMail(new NotificationEmail("subject",user.getEmail(),"body"));
+
+
     }
 
     private String generateVerificationToken(User user){
@@ -70,4 +72,19 @@ public class AuthService {
         return token;
     }
 
+    public void verifyAccount(String token) {
+       Optional<VerificationToken> verificationToken =  verificationTokenRepository.findByToken(token);
+       verificationToken.orElseThrow(() -> new RedditApplicationException("Token invalido"));
+       fetchUserAndEnable(verificationToken.get());
+    }
+
+
+
+    @Transactional
+    private void fetchUserAndEnable(VerificationToken verificationToken){
+        String username = verificationToken.getUser().getUsername();
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new RedditApplicationException("Usuario no encontrado " + username));
+        user.setEnabled(true);
+        userRepository.save(user);
+    }
 }
