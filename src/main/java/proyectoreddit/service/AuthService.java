@@ -6,6 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import proyectoreddit.dto.RegisterRequest;
+import proyectoreddit.models.NotificationEmail;
 import proyectoreddit.models.User;
 import proyectoreddit.models.VerificationToken;
 import proyectoreddit.repository.UserRepository;
@@ -32,6 +33,9 @@ public class AuthService {
 
     private final VerificationTokenRepository verificationTokenRepository;
 
+
+    private final MailService mailService;
+
     @Transactional
     public void signup(RegisterRequest registerRequest){
         User user = new User();
@@ -45,6 +49,15 @@ public class AuthService {
 
 
         String token =  generateVerificationToken(user);
+        /*
+        mailService.sendMail(new NotificationEmail("Por favor, activa tu cuenta",user.getEmail(),"Gracias por inscribirte" +
+                "presione el click para que te lleve al url de activacion de tu cuenta en Spring Reddit: : " +
+                "http://localhost:8080/api/auth/accountVeritifaction" +  token));
+
+
+         */
+
+        mailService.sendMail(new NotificationEmail("subject",user.getEmail(),"body"));
     }
 
     private String generateVerificationToken(User user){
